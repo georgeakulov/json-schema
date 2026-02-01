@@ -1,4 +1,4 @@
-# Json schema 2020-12 implementation
+# Json schema implementation
 
 Here is another implementation of the JSON Schema Draft 2020-12, Draft 2019-09 specification. 
 The main difference in this implementation is its support for multithreading, which significantly 
