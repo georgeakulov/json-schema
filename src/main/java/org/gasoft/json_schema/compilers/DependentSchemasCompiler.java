@@ -2,14 +2,17 @@ package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 
@@ -21,9 +24,17 @@ public class DependentSchemasCompiler implements INamedCompiler {
     }
 
     @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(
+                Defaults.DRAFT_2020_12_APPLICATOR,
+                Defaults.DRAFT_2019_09_APPLICATOR
+        );
+    }
+
+    @Override
     public @Nullable IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
         checkIt(schemaNode.isObject(), schemaLocator,
-                "The %s keyword value must be an object", getKeyword()
+                "The {0} keyword value must be an object", getKeyword()
         );
         Map<String, IValidator> validators = schemaNode.propertyStream()
                 .collect(Collectors.toMap(

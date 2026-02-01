@@ -2,12 +2,10 @@ package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import org.gasoft.json_schema.compilers.ICompiler.ICompileAction;
 import org.gasoft.json_schema.compilers.ICompiler.IValidatorAction;
 import org.gasoft.json_schema.dialects.DialectRegistry;
 import org.gasoft.json_schema.dialects.DialectResolver;
-import org.gasoft.json_schema.dialects.VocabularyRegistry;
 import org.gasoft.json_schema.loaders.SchemasRegistry;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
@@ -19,10 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,7 +29,7 @@ public class Compiler {
     public Function<JsonNode, Publisher<IValidationResult>> compileSchema(JsonNode schema, @Nullable URI defaultSchemaUri, @Nullable CompileConfig config) {
         config = config == null ? new CompileConfig() : config;
         SchemasRegistry registry = new SchemasRegistry(
-                new DialectResolver(DialectRegistry.getInstance(), new VocabularyRegistry()),
+                new DialectResolver(DialectRegistry.getInstance()),
                 config
         );
         ISchemaLocator locator = registry.registerInitialSchema(schema, defaultSchemaUri);
@@ -45,11 +40,6 @@ public class Compiler {
         IValidator validator = context.compile(schema, locator);
 
         return instance -> Mono.from(validator.validate(instance, JsonPointer.empty(), new SimpleValidationContext()));
-    }
-
-    // Root compiler
-    public Function<JsonNode, Publisher<IValidationResult>> compileSchema(JsonNode schema) {
-        return compileSchema(schema, null, null);
     }
 
     IValidator compile(JsonNode schema, CompileContext parentContext, ISchemaLocator schemaLocator) {
@@ -76,7 +66,7 @@ public class Compiler {
 
                 var keywordValidators = createValidators(foundCompilers, compileContext);
 
-                transformValidators(keywordValidators, compileContext);
+                transformValidators(keywordValidators, compileContext, schemaLocator);
 
                 invoke.laterValidator = (node, instancePtr, context) -> {
                     var ctxt = context.recreate(instancePtr);
@@ -98,10 +88,10 @@ public class Compiler {
         return invoke.laterValidator;
     }
 
-    private void transformValidators(Map<String, IValidatorAction> keywordValidators, CompileContext compileContext) {
-        CommonCompilersFactory.getCompilerRegistry()
+    private void transformValidators(Map<String, IValidatorAction> keywordValidators, CompileContext compileContext, ISchemaLocator schemaLocator) {
+        compileContext.getDialect(schemaLocator)
                 .getTransformers()
-                .stream().sorted(Comparator.comparing(IValidatorsTransformer::getOrder))
+                .sorted(Comparator.comparing(IValidatorsTransformer::getOrder))
                 .forEach(transformer -> transformer.transform(keywordValidators, compileContext));
     }
 
@@ -147,7 +137,7 @@ public class Compiler {
                 .collect(Collectors.toList());
 
         // Sort compiler for compilation order
-        for (@NonNull ICompileAction compileAction : Lists.newArrayList(foundCompilers)) {
+        for (@NonNull ICompileAction compileAction : new ArrayList<>(foundCompilers)) {
             compileAction.compiler().resolveCompilationOrder(foundCompilers, compileContext, locator);
         }
 

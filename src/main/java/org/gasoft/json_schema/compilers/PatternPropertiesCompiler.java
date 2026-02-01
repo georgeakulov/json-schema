@@ -1,10 +1,13 @@
 package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
+import org.gasoft.json_schema.compilers.base.BasePropertiesCompiler;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.jspecify.annotations.Nullable;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -19,8 +22,16 @@ public class PatternPropertiesCompiler extends BasePropertiesCompiler implements
     }
 
     @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(
+                Defaults.DRAFT_2020_12_APPLICATOR,
+                Defaults.DRAFT_2019_09_APPLICATOR
+        );
+    }
+
+    @Override
     public IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
-        checkIt(schemaNode.isObject(), schemaLocator,"the %s keyword value must be object. Actual %s", getKeyword(), schemaNode);
+        checkIt(schemaNode.isObject(), schemaLocator,"The {0} keyword value must be object. Actual {1}", getKeyword(), schemaNode);
         final PatternPropertiesTask patternPropertiesTask = new PatternPropertiesTask();
         schemaNode.propertyStream()
                 .forEach(property ->
@@ -42,7 +53,7 @@ public class PatternPropertiesCompiler extends BasePropertiesCompiler implements
 
     private static class PatternPropertiesTask {
 
-        private final List<PatternPropertiesCompiler.PatternValidator> list = Lists.newArrayList();
+        private final List<PatternPropertiesCompiler.PatternValidator> list = new ArrayList<>();
 
         void addValidator(String patternStr, Predicate<String> pattern, IValidator validator) {
             list.add(new PatternValidator(patternStr, pattern, validator));

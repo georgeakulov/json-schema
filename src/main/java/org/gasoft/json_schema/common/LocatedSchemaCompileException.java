@@ -1,7 +1,8 @@
 package org.gasoft.json_schema.common;
 
-import com.google.common.base.Strings;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
+
+import java.text.MessageFormat;
 
 public class LocatedSchemaCompileException extends SchemaCompileException {
 
@@ -21,17 +22,22 @@ public class LocatedSchemaCompileException extends SchemaCompileException {
         this.locator = locator;
     }
 
+    @Override
+    public String getMessage() {
+        return locator + ": " + super.getMessage();
+    }
+
     public static LocatedSchemaCompileException create(ISchemaLocator locator, Throwable cause, String message, Object ... args) {
-        return new LocatedSchemaCompileException(locator, Strings.lenientFormat(message, args), cause);
+        return new LocatedSchemaCompileException(locator, MessageFormat.format(message, args), cause);
     }
 
     public static LocatedSchemaCompileException create(ISchemaLocator locator, String message, Object ... args) {
-        return new LocatedSchemaCompileException(locator, Strings.lenientFormat(message, args));
+        return new LocatedSchemaCompileException(locator, MessageFormat.format(message, args));
     }
 
     public static void checkIt(boolean value, ISchemaLocator locator, String msg, Object... args) {
         if(!value) {
-            throw new LocatedSchemaCompileException(locator, Strings.lenientFormat(msg, args));
+            throw new LocatedSchemaCompileException(locator, MessageFormat.format(msg, args));
         }
     }
 }

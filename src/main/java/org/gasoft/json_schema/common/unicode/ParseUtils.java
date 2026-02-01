@@ -1,11 +1,9 @@
 package org.gasoft.json_schema.common.unicode;
 
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
-import com.google.common.io.LineReader;
-import org.jspecify.annotations.NonNull;
+import org.gasoft.json_schema.common.RangeCollections;
+import org.gasoft.json_schema.common.RangeCollections.IntRangeSet;
 
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Objects;
@@ -17,14 +15,13 @@ class ParseUtils {
         try {
 
             var cl = Thread.currentThread().getContextClassLoader();
-            try(var is = new InputStreamReader(Objects.requireNonNull(cl.getResourceAsStream(resourceName)))){
-                var lr = new LineReader(is);
+            try(var is = new BufferedReader(new InputStreamReader(Objects.requireNonNull(cl.getResourceAsStream(resourceName))))){
                 // Skip first line as title
-                var line = lr.readLine();
+                var line = is.readLine();
                 while(line != null) {
                     //parse line
                     lineConsumer.accept(line);
-                    line = lr.readLine();
+                    line = is.readLine();
                 }
             }
         }
@@ -44,24 +41,24 @@ class ParseUtils {
         );
     }
 
-    static RangeSet<@NonNull Integer> parseNumbers(String line) {
-        RangeSet<@NonNull Integer> rangeSet = TreeRangeSet.create();
+    static IntRangeSet parseNumbers(String line) {
+        IntRangeSet rangeSet = new IntRangeSet();
         Arrays.stream(line.split(","))
                 .map(ParseUtils::parseItem)
                 .forEach(rangeSet::add);
         return rangeSet;
     }
 
-    private static Range<@NonNull Integer> parseItem(String item) {
+    private static RangeCollections.Range parseItem(String item) {
         var idx = item.indexOf("-");
         if(idx < 0) {
-            return Range.singleton(Integer.parseInt(item, 16));
+            return RangeCollections.Range.of(Integer.parseInt(item, 16));
         }
-        return Range.closed(
+        return new RangeCollections.Range(
                 Integer.parseInt(item, 0, idx, 16),
                 Integer.parseInt(item, idx + 1, item.length(), 16)
         );
     }
 
-    record NamedRange(String name, RangeSet<@NonNull Integer> rangeSet) {}
+    record NamedRange(String name, IntRangeSet rangeSet) {}
 }

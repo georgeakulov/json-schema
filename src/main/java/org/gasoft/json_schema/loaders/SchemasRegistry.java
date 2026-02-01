@@ -2,9 +2,6 @@ package org.gasoft.json_schema.loaders;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.gasoft.json_schema.compilers.CompileConfig;
 import org.gasoft.json_schema.common.LocatedSchemaCompileException;
 import org.gasoft.json_schema.common.SchemaCompileException;
@@ -20,11 +17,10 @@ import org.jspecify.annotations.Nullable;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.create;
 import static org.gasoft.json_schema.common.SchemaCompileException.checkNonNull;
 
@@ -38,9 +34,9 @@ public class SchemasRegistry implements IReferenceResolver {
     /**
      * Id of schemes and subschemes
      */
-    private final Map<URI, UUID> idToHolders = Maps.newHashMap();
-    private final Map<URI, Set<UUID>> originToContent = Maps.newHashMap();
-    private final Map<UUID, SchemaInfo> content = Maps.newHashMap();
+    private final Map<URI, UUID> idToHolders = new HashMap<>();
+    private final Map<URI, Set<UUID>> originToContent = new HashMap<>();
+    private final Map<UUID, SchemaInfo> content = new HashMap<>();
 
     public SchemasRegistry(DialectResolver dialectResolver, CompileConfig compileConfig) {
         this.compileConfig = compileConfig;
@@ -68,11 +64,17 @@ public class SchemasRegistry implements IReferenceResolver {
             dialect = defaultDialect;
         }
 
-        SchemaProcessingResult result = schemaPreprocessor.onSchemaLoaded(
-                dialect,
-                node,
-                parentLocator == null ? null : parentLocator.getId()
-        );
+        SchemaProcessingResult result;
+        try {
+            result = schemaPreprocessor.onSchemaLoaded(
+                    dialect,
+                    node,
+                    parentLocator == null ? null : parentLocator.getId()
+            );
+        }
+        catch(Exception e) {
+            throw create(parentLocator, e, "Error on schema preprocessing");
+        }
 
         if(byUri != null && !byUri.isAbsolute()) {
             byUri = null;
@@ -100,12 +102,13 @@ public class SchemasRegistry implements IReferenceResolver {
                         .collect(Collectors.toMap(
                                 Map.Entry::getKey,
                                 ss -> ss.getValue().uuid()
-                        ))
+                        )),
+                subSchemaInfo.isRecursiveAnchor()
         );
 
         content.put(info.getUuid(), info);
         if(origin != null) {
-            originToContent.computeIfAbsent(origin, ignore -> Sets.newHashSet())
+            originToContent.computeIfAbsent(origin, ignore -> new HashSet<>())
                     .add(info.getUuid());
         }
         if(info.getId() != null) {
@@ -127,6 +130,33 @@ public class SchemasRegistry implements IReferenceResolver {
         URI id = schemaPreprocessor.resolveId(idValue, parentLocator.getId());
         SchemaInfo info = content.get(idToHolders.get(id));
         return ValidationResultFactory.createSubSchemaLocator(info.getUuid(), info.getOrigin(), info.getId(), JsonPointer.empty(), parentLocator);
+    }
+
+    public @NonNull IResolutionResult resolveRecursiveRef(String refValue, @NonNull ISchemaLocator locator) {
+        var resolution = new RefResolutionResult(refValue);
+        checkIt(
+                !resolution.hasFragment() && !resolution.hasPath(),
+                locator,
+                "The $recursiveRef can contains only '#' value. Actual: {0}", refValue
+        );
+        SchemaInfo info = getSchema(locator.getSchemaUUID());
+        if(info.hasRecursiveAnchor()) {
+            var locatorIt = locator.getParent();
+            while(locatorIt != null) {
+                var schema = content.get(locatorIt.getSchemaUUID());
+                var resolved = schema.hasRecursiveAnchor();
+                if(resolved) {
+                    info = schema;
+                }
+                locatorIt = locatorIt.getParent();
+            }
+        }
+
+        return new ReferenceResolutionResult(
+                ValidationResultFactory.createSubSchemaLocator(info.getUuid(), info.getOrigin(), info.getId(), JsonPointer.empty(), locator),
+                info.getContent(),
+                JsonPointer.empty()
+        );
     }
 
     @Override
@@ -245,9 +275,8 @@ public class SchemasRegistry implements IReferenceResolver {
                 resolved = externalResult.getAbsoluteUri();
                 if(resolved != null) {
                     if(!resolved.isAbsolute()) {
-                        throw new IllegalStateException(
-                                Strings.lenientFormat("The external resolver return non absolute URI %s. Source: %s, context URL: %s, result:,",
-                                        resolved, uri, schemaLocator.getOriginUri()));
+                        throw SchemaCompileException.create("The external resolver return non absolute URI {0}. Source: {1}, context URL: {2} result",
+                                        resolved, uri, schemaLocator.getOriginUri());
                     }
                 }
             }
@@ -287,11 +316,11 @@ public class SchemasRegistry implements IReferenceResolver {
 
         }
         catch(Throwable e) {
-            throw create(schemaLocator, e, "Error on loading resource %s", resolved);
+            throw create(schemaLocator, e, "Error on loading resource {0} by locator {1}", resolved, schemaLocator);
         }
 
         if(schema == null) {
-            throw LocatedSchemaCompileException.create(schemaLocator, "Unable to load resource %s", resolved);
+            throw create(schemaLocator, "Unable to load resource {0}", resolved);
         }
 
         return registerSchema(schema, resolved, schemaLocator, getDialect(schemaLocator));

@@ -1,8 +1,12 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.gasoft.json_schema.common.LocatedSchemaCompileException;
+import org.gasoft.json_schema.compilers.INamedCompiler;
+import org.gasoft.json_schema.compilers.IValidationContext;
+import org.gasoft.json_schema.compilers.IValidator;
+import org.gasoft.json_schema.compilers.Utils;
 import org.gasoft.json_schema.results.EErrorType;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
@@ -12,7 +16,7 @@ import org.reactivestreams.Publisher;
 
 import java.util.function.BiPredicate;
 
-public abstract class BaseLengthCompiler implements INamedCompiler{
+public abstract class BaseLengthCompiler implements INamedCompiler {
 
     protected IValidator create(ISchemaLocator schemaLocation, BiPredicate<Integer, Integer> compareFunc, EErrorType errorType, JsonNode schemaNode) {
         return new Validator(schemaLocation, compareFunc, schemaNode, errorType);

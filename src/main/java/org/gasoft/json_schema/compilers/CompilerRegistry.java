@@ -1,69 +1,53 @@
 package org.gasoft.json_schema.compilers;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import org.gasoft.json_schema.compilers.ICompilerFactory.IVocabularySupport;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkState;
+import java.net.URI;
+import java.util.*;
 
 public class CompilerRegistry {
 
-    private final Map<String, ICompiler> compilers = Maps.newHashMap();
-    private final Map<String, ICompilerFactory> compilerFactories = Maps.newHashMap();
-    private final List<IValidatorsTransformer> validatorTransformers = Lists.newArrayList();
+    private final Map<URI, VocabularyCompilersRegistry> registries = new HashMap<>();
     CompilerRegistry() {
         // Add all compilers to registry
     }
 
-    CompilerRegistry addCompiler(String name, ICompiler compiler) {
+    public static CompilerRegistry getInstance() {
+        return CommonCompilersFactory.getCompilerRegistry();
+    }
+
+    @Nullable
+    public VocabularyCompilersRegistry getCompilersForVocabulary(URI uri) {
+        return registries.get(uri);
+    }
+
+    CompilerRegistry addCompiler(INamedCompiler compiler) {
         Objects.requireNonNull(compiler);
-        checkState(this.compilers.put(name, compiler) == null, "The compiler with name %s already exists", name);
-        if(compiler instanceof IValidatorsTransformer) {
-            addValidatorsTransformer((IValidatorsTransformer) compiler);
-        }
+        compiler.getVocabularies().forEach(vocabulary ->
+            registries.computeIfAbsent(vocabulary, ignore -> new VocabularyCompilersRegistry())
+                    .add(compiler.getKeyword(), compiler)
+        );
         return this;
     }
 
     CompilerRegistry addCompiler(ICompilerFactory compilerFactory) {
         Objects.requireNonNull(compilerFactory);
-        compilerFactory.getSupportedKeywords()
-                .forEach(keyword -> compilerFactories.put(keyword, compilerFactory));
-        if(compilerFactory instanceof IValidatorsTransformer) {
-            addValidatorsTransformer((IValidatorsTransformer) compilerFactory);
-        }
+        compilerFactory.getSupportedKeywords().forEach(supported -> {
+            var reg = registries.computeIfAbsent(
+                            supported.vocabulary(),
+                            ignore -> new VocabularyCompilersRegistry());
+            supported.keywords().forEach(keyword -> reg.add(keyword, compilerFactory));
+        });
         return this;
     }
 
-    CompilerRegistry addValidatorsTransformer(IValidatorsTransformer validatorsTransformer) {
-        validatorTransformers.add(validatorsTransformer);
-        return this;
-    }
-
-    CompilerRegistry addCompiler(INamedCompiler namedCompiler) {
-        Objects.requireNonNull(namedCompiler);
-        return addCompiler(namedCompiler.getKeyword(), namedCompiler);
-    }
-
-    public List<IValidatorsTransformer> getTransformers() {
-        return validatorTransformers;
-    }
-
-    @Nullable
-    public ICompiler optCompiler(String keyword) {
-        ICompiler compiler = compilers.get(keyword);
-        if(compiler != null) {
-            return compiler;
+    public record VocabularySupport(List<String> keywords, URI vocabulary) implements IVocabularySupport {
+        public static VocabularySupport of(String keyword, URI vocabulary) {
+            return new VocabularySupport(List.of(keyword), vocabulary);
         }
-        ICompilerFactory factory = compilerFactories.get(keyword);
-        if(factory != null) {
-            return factory.getCompiler(keyword);
+        public static VocabularySupport of(URI vocabulary, String ... keywords) {
+            return new VocabularySupport(Arrays.asList(keywords), vocabulary);
         }
-
-        return null;
     }
-
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.google.common.collect.Maps;
 import org.gasoft.json_schema.compilers.ICompiler;
 import org.gasoft.json_schema.dialects.Dialect;
 import org.gasoft.json_schema.loaders.SchemaInfo.SubSchemaInfo;
@@ -33,7 +32,7 @@ public class SchemaPreprocessor {
         // todo Resolve relative ids with authoring part
         // optional/refOfUnknownKeyword.json - "reference of an arbitrary keyword of a sub-schema with encoded ref"
         URI idUri = URI.create(idValue);
-        checkIt(idUri.getFragment() == null || idUri.getFragment().isEmpty(), "The id %s can`t contains fragment", idUri);
+        checkIt(idUri.getFragment() == null || idUri.getFragment().isEmpty(), "The id {0} can`t contains fragment", idUri);
         if(idUri.isAbsolute()) {
             return idUri;
         }
@@ -55,7 +54,7 @@ public class SchemaPreprocessor {
 
         private final Dialect dialect;
         private SubSchemaInfo rootSubSchema;
-        private final Map<URI, SubSchemaInfo> subschemaInfos = Maps.newHashMap();
+        private final Map<URI, SubSchemaInfo> subschemaInfos = new HashMap<>();
 
         public SchemaProcessingResult(Dialect dialect, JsonNode schema) {
             this.dialect = dialect;
@@ -67,7 +66,7 @@ public class SchemaPreprocessor {
 
             if(pointer.equals(JsonPointer.empty())) {
                 rootSubSchema = new SubSchemaInfo(rootSubSchema.uuid(), id, JsonPointer.empty(), rootSubSchema.schema(),
-                        rootSubSchema.anchors(), rootSubSchema.dynamicAnchors(), Maps.newHashMap());
+                        rootSubSchema.anchors(), rootSubSchema.dynamicAnchors(), new HashMap<>());
                 return new CreateSubSchemaResult(id, rootSubSchema);
             }
             else {
@@ -78,16 +77,15 @@ public class SchemaPreprocessor {
                 parentSubSchema.subschemas().put(relative.toString(), subschema);
                 return new CreateSubSchemaResult(id, subschema);
             }
-
         }
 
         private void onAnchor(JsonNode node, JsonPointer pointer, URI parentId) {
 
-            checkIt(node.isTextual(), "The $anchor must be an string. Actual:", node);
+            checkIt(node.isTextual(), "The $anchor must be an string. Actual: {0}", node);
 
             SubSchemaInfo subSchema = getSubSchema(parentId, pointer);
             JsonPointer relative = childToRelative(subSchema.absolutePointer(), pointer);
-            checkIt(subSchema.anchors().put(node.textValue(), relative) == null, "The anchor %s already exists", node);
+            checkIt(subSchema.anchors().put(node.textValue(), relative) == null, "The anchor {0} already exists", node);
         }
 
         private SubSchemaInfo getSubSchema(URI parentId, JsonPointer pointer) {
@@ -98,15 +96,21 @@ public class SchemaPreprocessor {
             else {
                 subSchema = subschemaInfos.get(parentId);
             }
-            return checkNonNull(subSchema, "Can`t resolve subschema by ptr: %s and id: %s", pointer, parentId);
+            return checkNonNull(subSchema, "Can`t resolve subschema by ptr: {0} and id: {1}", pointer, parentId);
         }
 
         private void onNewDynamicAnchor(JsonNode node, JsonPointer pointer, URI parentId) {
 
-            checkIt(node.isTextual(), "The $dynamicAnchor keyword value must be an string. Actual:", node);
+            checkIt(node.isTextual(), "The $dynamicAnchor keyword value must be an string. Actual: {0}", node);
             var subSchema = getSubSchema(parentId, pointer);
             JsonPointer childToRelative = childToRelative(subSchema.absolutePointer(), pointer);
-            checkIt(subSchema.dynamicAnchors().put(node.textValue(), childToRelative) == null, "The $dynaminAnchor %s already exists", node);
+            checkIt(subSchema.dynamicAnchors().put(node.textValue(), childToRelative) == null, "The $dynaminAnchor {0} already exists", node);
+        }
+
+        private void onRecursiveAnchor(JsonNode node, JsonPointer pointer, URI parentId) {
+            checkIt(node.isBoolean(), "The $recursiveAnchor must be boolean. Actual: {0}", node);
+            var subSchema = getSubSchema(parentId, pointer);
+            subSchema.markRecursiveAnchor(node.asBoolean());
         }
 
         public SubSchemaInfo getRootSubSchema() {
@@ -157,14 +161,25 @@ public class SchemaPreprocessor {
                             }
                     );
 
-            var anchor = node.path("$anchor");
-            if(!anchor.isMissingNode()) {
-                schemaProcessingResult.onAnchor(anchor, pointer, parentId);
+            if(schemaProcessingResult.dialect.optCompiler("$anchor") != null) {
+                var anchor = node.path("$anchor");
+                if(!anchor.isMissingNode()) {
+                    schemaProcessingResult.onAnchor(anchor, pointer, parentId);
+                }
             }
 
-            var dynamicAnchor = node.path("$dynamicAnchor");
-            if(!dynamicAnchor.isMissingNode()) {
-                schemaProcessingResult.onNewDynamicAnchor(dynamicAnchor, pointer, parentId);
+            if(schemaProcessingResult.dialect.optCompiler("$dynamicAnchor") != null) {
+                var dynamicAnchor = node.path("$dynamicAnchor");
+                if(!dynamicAnchor.isMissingNode()) {
+                    schemaProcessingResult.onNewDynamicAnchor(dynamicAnchor, pointer, parentId);
+                }
+            }
+
+            if(schemaProcessingResult.dialect.optCompiler("$recursiveAnchor") != null) {
+                var dynamicAnchor = node.path("$recursiveAnchor");
+                if(!dynamicAnchor.isMissingNode()) {
+                    schemaProcessingResult.onRecursiveAnchor(dynamicAnchor, pointer, parentId);
+                }
             }
 
             node.propertyStream()
@@ -172,6 +187,9 @@ public class SchemaPreprocessor {
                         ICompiler compiler = schemaProcessingResult.dialect.optCompiler(entry.getKey());
                         if(compiler != null) {
                             compiler.preprocess(this, entry.getKey(), entry.getValue(), pointer.appendProperty(entry.getKey()));
+                        }
+                        else {
+                            System.out.println("No compiler for key: " + entry.getKey());
                         }
                     });
         }
@@ -181,7 +199,7 @@ public class SchemaPreprocessor {
         String parentStr = parent.toString();
         String childStr = child.toString();
 
-        checkIt(childStr.startsWith(parentStr), "The parent pointer %s not a part of child pointer %s", parent, child);
+        checkIt(childStr.startsWith(parentStr), "The parent pointer {0} not a part of child pointer {1}", parent, child);
 
         String childStrTrimmed = childStr.substring(parentStr.length());
         if(childStrTrimmed.isBlank()) {

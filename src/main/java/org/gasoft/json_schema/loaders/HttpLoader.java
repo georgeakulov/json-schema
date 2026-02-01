@@ -35,7 +35,7 @@ class HttpLoader implements IResourceLoader {
             throw sce;
         }
         catch(Exception e) {
-            throw create(e, "Error on load schema: %s", byUri);
+            throw create(e, "Error on load schema: {0}", byUri);
         }
     }
 
@@ -49,19 +49,19 @@ class HttpLoader implements IResourceLoader {
 
         if(hr.statusCode() == HttpURLConnection.HTTP_MOVED_PERM || hr.statusCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
             String location = hr.headers().firstValue("Location")
-                    .orElseThrow(() -> create("Response code %s without Location header", hr.statusCode()));
+                    .orElseThrow(() -> create("Response code {0} without Location header", hr.statusCode()));
 
             return onLocation(client, location);
         }
 
         if(hr.statusCode() != 200) {
-            throw create("<< Status: %s  from: %s", hr.statusCode(), byUri);
+            throw create("<< Status: {0}  from: {1}", hr.statusCode(), byUri);
         }
         try(InputStream is = hr.body()) {
             return JsonUtils.parse(is);
         }
         catch(IOException e) {
-            throw create(e, "Error read json from %s", byUri);
+            throw create(e, "Error read json from {0}", byUri);
         }
     }
 
@@ -70,7 +70,7 @@ class HttpLoader implements IResourceLoader {
             return load(client, URI.create(location));
         }
         catch(IllegalArgumentException e) {
-            throw create(e, "Wrong Location header uri: %s", location);
+            throw create(e, "Wrong Location header uri: {0}", location);
         }
     }
 }

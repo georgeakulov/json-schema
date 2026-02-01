@@ -23,7 +23,7 @@ class ClasspathLoader implements IResourceLoader{
             return JsonUtils.parse(is);
         }
         catch(IOException e) {
-            throw SchemaCompileException.create(e, "Error on load: %s", byUri);
+            throw SchemaCompileException.create(e, "Error on load:{0}", byUri);
         }
     }
 }

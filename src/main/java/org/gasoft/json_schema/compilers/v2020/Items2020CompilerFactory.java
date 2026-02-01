@@ -1,8 +1,12 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.v2020;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.gasoft.json_schema.compilers.*;
+import org.gasoft.json_schema.compilers.CompilerRegistry.VocabularySupport;
+import org.gasoft.json_schema.dialects.Defaults;
+import org.gasoft.json_schema.dialects.Vocabulary;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.ValidationResultFactory;
@@ -13,46 +17,52 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class ItemsCompilerFactory implements ICompilerFactory {
+public class Items2020CompilerFactory implements ICompilerFactory {
 
     @Override
-    public Stream<String> getSupportedKeywords() {
-        return Stream.of("items");
+    public Stream<IVocabularySupport> getSupportedKeywords() {
+        return Stream.of(
+                VocabularySupport.of(Defaults.DRAFT_2020_12_APPLICATOR, "items")
+        );
     }
 
     @Override
-    public ICompiler getCompiler(String keyword) {
+    public ICompiler getCompiler(String keyword, Vocabulary vocabulary) {
         return new ItemsCompiler();
     }
 
-    private static class ItemsCompiler implements ICompiler {
-
-        private ISchemaLocator schemaLocation;
-        private IValidator validator;
-        private int prefixItemsCount;
+    private static class ItemsCompiler implements ICompiler, IValidator {
+        private ISchemaLocator locator;
         private CompileConfig config;
+        private int prefixItemsCount;
+        private IValidator validator;
 
         @Override
         public IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
-            this.schemaLocation = schemaLocator;
+            this.locator = schemaLocator;
+            this.config = compileContext.getConfig();
             this.validator = compileContext.compile(schemaNode, schemaLocator);
             prefixItemsCount = resolveMinIndexForValidate(compileContext);
-            this.config = compileContext.getConfig();
-            return this::validate;
+            return this;
         }
 
-        private Publisher<IValidationResult> validate(JsonNode instance, JsonPointer instancePtr, IValidationContext validationContext) {
-            var id = ValidationResultFactory.createId(schemaLocation, instancePtr);
+
+        @Override
+        public Publisher<IValidationResult> validate(JsonNode instance, JsonPointer instancePtr, IValidationContext context) {
+            var id = ValidationResultFactory.createId(locator, instancePtr);
 
             var evaluated = ToArrayWrapper.tryWrap(instance, config);
-            if(evaluated.isArray() && instance.size() > prefixItemsCount) {
+            if(evaluated.isArray()) {
 
-                return Flux.range(prefixItemsCount, evaluated.size() - prefixItemsCount)
+                Flux<Integer> range = evaluated.size() > prefixItemsCount
+                        ? Flux.range(prefixItemsCount, evaluated.size() - prefixItemsCount)
+                        : Flux.empty();
+                return range
                         .flatMap(idx -> {
                             var idxPtr = instancePtr.appendIndex(idx);
                             return ValidationResultFactory.tryAppendAnnotation(
-                                    () -> validator.validate(evaluated.get(idx), idxPtr, validationContext),
-                                    ValidationResultFactory.createId(schemaLocation, idxPtr)
+                                    () -> validator.validate(evaluated.get(idx), idxPtr, context),
+                                    ValidationResultFactory.createId(locator, idxPtr)
                             );
                         })
                         .subscribeOn(config.getScheduler())
@@ -61,8 +71,14 @@ public class ItemsCompilerFactory implements ICompilerFactory {
                                 ValidationResultFactory.ValidationResultContainer::append
                         )
                         .map(val -> val);
+
             }
             return ValidationResultFactory.createOk(id).publish();
+        }
+
+        @Override
+        public void preprocess(IPreprocessorMediator mediator, String keyword, JsonNode node, JsonPointer pointer) {
+            mediator.process(pointer);
         }
 
         @Override
@@ -79,11 +95,6 @@ public class ItemsCompilerFactory implements ICompilerFactory {
                 return ((PrefixItemsFactory.PrefixItemsCompiler)compiler).getValidateItemsCount();
             }
             return 0;
-        }
-
-        @Override
-        public void preprocess(IPreprocessorMediator mediator, String keyword, JsonNode node, JsonPointer pointer) {
-            mediator.process(pointer);
         }
     }
 

@@ -1,8 +1,7 @@
 package org.gasoft.json_schema.dialects;
 
-import com.google.common.collect.Maps;
-
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -10,7 +9,7 @@ import java.util.stream.Stream;
 class DialectInfo {
 
     private final URI dialectUri;
-    private final Map<URI, VocabularyState> vocabularies = Maps.newHashMap();
+    private final Map<URI, VocabularyState> vocabularies = new HashMap<>();
 
     DialectInfo(URI dialectUri) {
         this.dialectUri = dialectUri;

@@ -1,6 +1,5 @@
 package org.gasoft.json_schema.compilers;
 
-import com.google.common.base.Strings;
 import org.gasoft.json_schema.Schema;
 import org.gasoft.json_schema.SchemaBuilder;
 import org.gasoft.json_schema.TestUtils;
@@ -12,6 +11,9 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -20,11 +22,15 @@ import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.compilers.JsonSchemaTestDataProvider.*;
 
-@Disabled
+
 @Execution(ExecutionMode.CONCURRENT)
 public class JsonSchemaOrgTests {
 
     static TestServer server = new TestServer();
+
+    private static final List<String> SUPPORTED_FOLDERS = List.of(
+            "draft2019", "draft2020"
+    );
 
     @BeforeAll
     static void beforeAll() {
@@ -36,6 +42,7 @@ public class JsonSchemaOrgTests {
         server.down();
     }
 
+    @Disabled
     @TestFactory()
     Stream<DynamicNode> testDrafts() {
         return JsonSchemaTestDataProvider.getFilesHierarchy()
@@ -71,9 +78,15 @@ public class JsonSchemaOrgTests {
     DynamicNode forFile(Path parent, TestUtils.IFile file) {
 
         if(file.isDirectory()) {
+            String relative = parent.relativize(file.path()).toString();
+            String relativeToRoot = file.relativeToRoot().toString();
+            if(SUPPORTED_FOLDERS.stream().noneMatch(relativeToRoot::contains)) {
+                return null;
+            }
             return DynamicContainer.dynamicContainer(
-                    "\uD83D\uDCC1: " + parent.relativize(file.path()),
+                    "\uD83D\uDCC1: " + relative,
                     file.childs().stream()
+                            .sorted(Comparator.comparing(inFile -> inFile.path().getFileName().toString()))
                             .map(inFile -> forFile(file.path(), inFile))
                             .filter(Objects::nonNull)
                             .toList()
@@ -95,15 +108,14 @@ public class JsonSchemaOrgTests {
                                 var compiledSchema = SchemaBuilder.create()
                                         .setDraft202012DefaultDialect()
                                         .setFormatAssertionsEnabled(
-                                                testFile.rootRelativePath().toString().startsWith("optional/format")
-                                                        || testFile.relativePath().toString().startsWith("optional/format-assertion.json")
+                                                testFile.rootRelativePath().toString().contains("optional/format")
+                                                        || testFile.relativePath().toString().contains("optional/format-assertion.json")
                                         )
                                         .compile(schema.schemaValue());
 
                                 return DynamicContainer.dynamicContainer(
                                         schema.description(),
                                         schema.tests().stream()
-                                                //                                                                .filter(test -> test.description().startsWith("a valid host name"))
                                                 .map(test -> DynamicTest.dynamicTest(
                                                         test.description(),
                                                         toExecutable(compiledSchema, schema, test)
@@ -126,8 +138,8 @@ public class JsonSchemaOrgTests {
 
             var result = compiledSchema.apply(test.value());
 
-            Assertions.assertEquals(test.expected(), result.isOk(), () -> Strings.lenientFormat(
-                "The schema '%s' and test '%s' has non expected result %s, with msg: \"%s\"",
+            Assertions.assertEquals(test.expected(), result.isOk(), () -> MessageFormat.format(
+                "The schema {0} and test {1} has non expected result {2}, with msg: \"{3}\"",
                 schema.description(),
                 test.description(),
                 result.isOk(),

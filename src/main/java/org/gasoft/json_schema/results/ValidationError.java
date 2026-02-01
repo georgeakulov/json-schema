@@ -1,9 +1,8 @@
 package org.gasoft.json_schema.results;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
 import org.gasoft.json_schema.results.IValidationResult.IValidationResultError;
-import org.jspecify.annotations.NonNull;
+
+import java.text.MessageFormat;
 
 public class ValidationError extends AbstractValidationResult implements IValidationResultError {
 
@@ -29,14 +28,15 @@ public class ValidationError extends AbstractValidationResult implements IValida
         if(args == null) {
             return errorType.getDefaultErrorMsg();
         }
-        return Strings.lenientFormat(errorType.getDefaultErrorMsg(), args);
+        return MessageFormat.format(errorType.getDefaultErrorMsg(), args);
     }
 
     @Override
-    public @NonNull String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", getId())
-                .add("msg", getError())
-                .toString();
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ValidationError{");
+        sb.append("id=").append(getId());
+        sb.append(", msg=").append(getError());
+        sb.append('}');
+        return sb.toString();
     }
 }

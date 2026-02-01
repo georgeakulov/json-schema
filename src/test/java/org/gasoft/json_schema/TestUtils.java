@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -22,7 +22,7 @@ public class TestUtils {
 
     public static List<Path> getPathsFromDir(Path folderPath, Predicate<Path> filter, int depth) {
 
-        List<Path> paths = Lists.newArrayList();
+        List<Path> paths = new ArrayList<>();
         getPathsFromDirCb(folderPath, depth, path -> {
             File file = path.toFile();
             if(!file.isDirectory() && filter.test(path)) {
@@ -33,18 +33,22 @@ public class TestUtils {
     }
 
     public static List<IFile> getPathsHierarchy(Path folderPath, Predicate<Path> fileFilter) {
-        List<IFile> files = Lists.newArrayList();
+        return getPathsHierarchy(folderPath, folderPath, fileFilter);
+    }
+
+    private static List<IFile> getPathsHierarchy(Path root, Path folderPath, Predicate<Path> fileFilter) {
+        List<IFile> files = new ArrayList<>();
         getPathsFromDirCb(folderPath, 1, path -> {
             if(folderPath.equals(path)) {
                 return;
             }
             File file = path.toFile();
             if(file.isDirectory()) {
-                files.add(new IntDirectory(path, getPathsHierarchy(path, fileFilter)));
+                files.add(new IntDirectory(path, getPathsHierarchy(root, path, fileFilter), root.relativize(path)));
             }
             else {
                 if(fileFilter.test(path)) {
-                    files.add(new IntFile(path));
+                    files.add(new IntFile(path, root.relativize(path)));
                 }
             }
         });
@@ -87,10 +91,11 @@ public class TestUtils {
     public interface IFile {
         Path path();
         List<IFile> childs();
+        Path relativeToRoot();
         boolean isDirectory();
     }
 
-    record IntFile(Path path) implements IFile {
+    record IntFile(Path path, Path relativeToRoot) implements IFile {
         @Override
         public List<IFile> childs() {
             return List.of();
@@ -101,7 +106,7 @@ public class TestUtils {
             return false;
         }
     }
-    record IntDirectory(Path path, List<IFile> childs) implements IFile {
+    record IntDirectory(Path path, List<IFile> childs, Path relativeToRoot) implements IFile {
         @Override
         public boolean isDirectory() {
             return true;

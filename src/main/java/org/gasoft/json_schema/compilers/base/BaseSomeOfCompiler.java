@@ -1,20 +1,23 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import org.gasoft.json_schema.common.LocatedSchemaCompileException;
+import org.gasoft.json_schema.compilers.CompileContext;
+import org.gasoft.json_schema.compilers.INamedCompiler;
+import org.gasoft.json_schema.compilers.IValidator;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-abstract class BaseSomeOfCompiler implements INamedCompiler{
+public abstract class BaseSomeOfCompiler implements INamedCompiler {
 
     protected List<IValidator> prepareValidators(JsonNode schemaNode, ISchemaLocator schemaLocation, CompileContext compileContext) {
         LocatedSchemaCompileException.checkIt(schemaNode.isArray() && !schemaNode.isEmpty(), schemaLocation,
                 "The value of %s keyword keyword must be an non empty array");
-        List<IValidator> validators = Lists.newArrayList();
+        List<IValidator> validators = new ArrayList<>();
         for(int idx = 0; idx < schemaNode.size(); ++idx) {
             validators.add(compileContext.compile(schemaNode.get(idx), schemaLocation.appendIndex(idx)));
         }

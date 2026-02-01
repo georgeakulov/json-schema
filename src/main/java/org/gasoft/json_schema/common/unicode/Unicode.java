@@ -1,19 +1,17 @@
 package org.gasoft.json_schema.common.unicode;
 
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
+import org.gasoft.json_schema.common.RangeCollections.IntRangeSet;
 
 public class Unicode {
 
-
-    private static final RangeSet<Integer> VIRAMA = preloadUnicodeData();
+    private static final IntRangeSet VIRAMA = preloadUnicodeData();
 
     public static boolean isVirama(int codePoint) {
         return VIRAMA.contains(codePoint);
     }
 
-    private static RangeSet<Integer> preloadUnicodeData() {
-        RangeSet<Integer> rangeSet = TreeRangeSet.create();
+    private static IntRangeSet preloadUnicodeData() {
+        IntRangeSet rangeSet = new IntRangeSet();
         ParseUtils.forEachLine(
                 "UnicodeDataShort.txt",
                 line -> rangeSet.addAll(ParseUtils.parseNumbers(line))

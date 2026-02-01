@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.google.common.collect.Sets;
 import org.gasoft.json_schema.common.LocatedSchemaCompileException;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.EErrorType;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
@@ -15,9 +15,12 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import java.net.URI;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 
@@ -29,9 +32,14 @@ public class DependenciesCompiler implements INamedCompiler {
     }
 
     @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(Defaults.DRAFT_2020_12_APPLICATOR, Defaults.DRAFT_2019_09_CORE);
+    }
+
+    @Override
     public @Nullable IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
 
-        checkIt(schemaNode.isObject(), schemaLocator, "The %s keyword value must be an object", getKeyword());
+        checkIt(schemaNode.isObject(), schemaLocator, "The {0} keyword value must be an object", getKeyword());
         Map<String, SubValidator> validators = schemaNode.propertyStream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
@@ -59,7 +67,7 @@ public class DependenciesCompiler implements INamedCompiler {
             case OBJECT, BOOLEAN -> new DependentSchemaSubValidator(locator.appendProperty(schemaEntry.getKey()), schemaEntry.getKey(), schemaEntry.getValue(), context);
             case ARRAY -> new DependentRequiredSubValidator(locator, schemaEntry.getKey(), (ArrayNode) schemaEntry.getValue());
             default ->
-                throw LocatedSchemaCompileException.create(locator, "Values of %s keyword properties must be an array or object", getKeyword());
+                throw LocatedSchemaCompileException.create(locator, "Values of {0} keyword properties must be an array or object", getKeyword());
         };
     }
 
@@ -114,17 +122,20 @@ public class DependenciesCompiler implements INamedCompiler {
 
 
     private class DependentRequiredSubValidator extends SubValidator {
-        private final Set<String> required = Sets.newHashSet();
+
+        private final Set<String> required = new HashSet<>();
+
         public DependentRequiredSubValidator(ISchemaLocator locator, String key, ArrayNode value) {
+
             super(key, locator);
 
             value.valueStream()
                     .peek(val ->
                             checkIt(val.getNodeType() == JsonNodeType.STRING, locator,
-                            "The %s keyword for property %s must contains array of STRING", getKeyword(), key))
+                            "The {0} keyword for property {1} must contains array of STRING", getKeyword(), key))
                     .forEach(val ->
                             checkIt(required.add(val.textValue()), locator,
-                                    "The %s keyword for property %s contains duplicated strings", getKeyword(), key)
+                                    "The {0} keyword for property {1} contains duplicated strings", getKeyword(), key)
                     );
         }
 

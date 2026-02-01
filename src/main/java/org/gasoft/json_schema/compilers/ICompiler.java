@@ -2,6 +2,7 @@ package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.compilers.base.BaseSomeOfCompiler;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.IValidationResult.IValidationId;
 import org.gasoft.json_schema.results.ValidationResultFactory;

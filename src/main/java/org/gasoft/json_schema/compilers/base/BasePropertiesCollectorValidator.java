@@ -1,9 +1,11 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.gasoft.json_schema.compilers.ICompiler.IValidatorAction;
+import org.gasoft.json_schema.compilers.IValidationContext;
+import org.gasoft.json_schema.compilers.IValidator;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.reactivestreams.Publisher;
@@ -11,7 +13,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 
-abstract class BasePropertiesCollectorValidator implements IValidator {
+public abstract class BasePropertiesCollectorValidator implements IValidator {
 
     protected final IValidatorAction original;
     private final List<IValidatorAction> validators;

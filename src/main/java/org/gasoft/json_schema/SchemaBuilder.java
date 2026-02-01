@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.gasoft.json_schema.common.JsonUtils;
 import org.gasoft.json_schema.compilers.CompileConfig;
 import org.gasoft.json_schema.compilers.Compiler;
-import org.gasoft.json_schema.dialects.DialectRegistry;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.loaders.ExternalResolversHelper;
 import org.gasoft.json_schema.loaders.IResourceLoader;
 import reactor.core.scheduler.Scheduler;
@@ -49,8 +49,20 @@ public class SchemaBuilder {
         return setDefaultDialect(URI.create(defaultDialect));
     }
 
+    /**
+     * Setup Draft 2020-12 dialect as default
+     * @return this
+     */
     public SchemaBuilder setDraft202012DefaultDialect() {
-        return setDefaultDialect(DialectRegistry.DIALECT_2020_12);
+        return setDefaultDialect(Defaults.DIALECT_2020_12);
+    }
+
+    /**
+     * Setup Draft 2019-09 dialect as default
+     * @return this
+     */
+    public SchemaBuilder setDraft202009DefaultDialect() {
+        return setDefaultDialect(Defaults.DIALECT_2020_12);
     }
 
     /**

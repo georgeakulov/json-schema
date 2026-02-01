@@ -8,6 +8,7 @@ import org.jspecify.annotations.NonNull;
 public interface IReferenceResolver {
 
     @NonNull IResolutionResult resolveDynamicRef(String refValue, @NonNull ISchemaLocator schemaLocator);
+    @NonNull IResolutionResult resolveRecursiveRef(String refValue, @NonNull ISchemaLocator schemaLocator);
 
     /**
      * @param awaitedResource reference without fragment

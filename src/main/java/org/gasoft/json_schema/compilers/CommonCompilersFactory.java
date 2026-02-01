@@ -1,5 +1,11 @@
 package org.gasoft.json_schema.compilers;
 
+import org.gasoft.json_schema.compilers.v2019.AdditionalItemsCompiler;
+import org.gasoft.json_schema.compilers.v2019.Items2019Compiler;
+import org.gasoft.json_schema.compilers.v2019.RecursiveRefCompiler;
+import org.gasoft.json_schema.compilers.v2020.Items2020CompilerFactory;
+import org.gasoft.json_schema.compilers.v2020.PrefixItemsFactory;
+
 public class CommonCompilersFactory {
 
     private static final CompilerRegistry COMPILER_REGISTRY = new CompilerRegistry();
@@ -32,7 +38,8 @@ public class CommonCompilersFactory {
                 .addCompiler(new MaxPropertiesCompiler())
 
                 .addCompiler(new PrefixItemsFactory())
-                .addCompiler(new ItemsCompilerFactory())
+                .addCompiler(new Items2020CompilerFactory())
+                .addCompiler(new Items2019Compiler())
 
                 .addCompiler(new ContainsCompilerFactory())
                 .addCompiler(new RequiredCompiler())
@@ -54,6 +61,8 @@ public class CommonCompilersFactory {
                 .addCompiler(new EmptyCompilerFactory())
                 .addCompiler(new DefsCompiler())
                 .addCompiler(new FormatCompiler())
+                .addCompiler(new AdditionalItemsCompiler())
+                .addCompiler(new RecursiveRefCompiler())
         ;
     }
 

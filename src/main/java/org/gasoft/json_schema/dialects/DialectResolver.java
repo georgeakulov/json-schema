@@ -10,21 +10,20 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.gasoft.json_schema.common.SchemaCompileException.checkIt;
+import static org.gasoft.json_schema.common.SchemaCompileException.create;
 
 public class DialectResolver {
 
     private final DialectRegistry dialectRegistry;
-    private final VocabularyRegistry vocabularyRegistry;
 
-    public DialectResolver(DialectRegistry dialectRegistry, VocabularyRegistry vocabularyRegistry) {
+    public DialectResolver(DialectRegistry dialectRegistry) {
         this.dialectRegistry = dialectRegistry;
-        this.vocabularyRegistry = vocabularyRegistry;
     }
 
     public Dialect optDefaultDialect(URI uri) {
         var result = dialectRegistry.optDialect(uri);
         if(result != null) {
-            return Dialect.create(result, vocabularyRegistry::optVocabulary);
+            return Dialect.create(result, dialectRegistry::optVocabulary);
         }
         return null;
     }
@@ -33,6 +32,7 @@ public class DialectResolver {
     public Dialect resolveDialect(JsonNode schema, Function<URI, JsonNode> resourceLoader) {
 
         if(!schema.has("$schema")) {
+            // No schema keyword. Use default dialect
             return null;
         }
 
@@ -42,8 +42,8 @@ public class DialectResolver {
         if(info.getValue() == null) {
             info = resolveUnknownDialect(schema, resourceLoader);
             if(info.getKey() == null || info.getValue() == null) {
-                // Can`t resolve dialect
-                return null;
+//                 Can`t resolve dialect
+                throw create("Unsupported dialect {0} found", schema.get("$schema"));
             }
         }
 
@@ -53,7 +53,7 @@ public class DialectResolver {
     private Dialect tryApplyVocabularies(DialectInfo dialectInfo, JsonNode schema) {
         JsonNode vocabularies = schema.path("$vocabulary");
         if(vocabularies.isMissingNode()) {
-            return Dialect.create(dialectInfo, vocabularyRegistry::optVocabulary);
+            return Dialect.create(dialectInfo, dialectRegistry::optVocabulary);
         }
 
         checkIt(vocabularies.isObject(), "The $vocabulary must be an object");
@@ -68,11 +68,11 @@ public class DialectResolver {
                     }
                     dialectInfo.addVocabulary(vocabulary, used);
                 });
-        return Dialect.create(dialectInfo, vocabularyRegistry::optVocabulary);
+        return Dialect.create(dialectInfo, dialectRegistry::optVocabulary);
     }
 
     private void checkVocabulary(URI vocabulary) {
-        var existing = vocabularyRegistry.optVocabulary(vocabulary);
+        var existing = dialectRegistry.optVocabulary(vocabulary);
         if(existing == null) {
             throw new RuntimeException("The unknown vocabulary " + vocabulary);
         }

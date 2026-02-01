@@ -1,12 +1,16 @@
 package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.compilers.base.BaseSomeOfCompiler;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Flux;
 
+import java.net.URI;
 import java.util.List;
+import java.util.stream.Stream;
 
 
 public class AllOfCompiler extends BaseSomeOfCompiler {
@@ -14,6 +18,14 @@ public class AllOfCompiler extends BaseSomeOfCompiler {
     @Override
     public String getKeyword() {
         return "allOf";
+    }
+
+    @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(
+                Defaults.DRAFT_2020_12_APPLICATOR,
+                Defaults.DRAFT_2019_09_APPLICATOR
+        );
     }
 
     @Override

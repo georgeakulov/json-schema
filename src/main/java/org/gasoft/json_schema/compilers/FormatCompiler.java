@@ -7,6 +7,7 @@ import org.gasoft.json_schema.common.DateTimeFormatValidation;
 import org.gasoft.json_schema.common.email.EmailValidator;
 import org.gasoft.json_schema.common.email.HostnameValidator;
 import org.gasoft.json_schema.common.uritemplate.URITemplateParser;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.dialects.Dialect;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.ValidationError;
@@ -14,7 +15,9 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.create;
@@ -29,8 +32,13 @@ public class FormatCompiler implements INamedCompiler {
     }
 
     @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(Defaults.DRAFT_2020_12_FORMAT_ANNOTATION, Defaults.DRAFT_2020_12_FORMAT_ASSERTION, Defaults.DRAFT_2019_09_FORMAT);
+    }
+
+    @Override
     public @Nullable IValidator compile(JsonNode schemaNode, CompileContext compileContext, IValidationResult.ISchemaLocator schemaLocator) {
-        checkIt(schemaNode.isTextual(), schemaLocator, "The %s keyword must be a string", getKeyword());
+        checkIt(schemaNode.isTextual(), schemaLocator, "The {0} keyword must be a string", getKeyword());
 
         Dialect dialect = compileContext.getDialect(schemaLocator);
         if(!(dialect.isAssertionRequired() || compileContext.getConfig().isFormatEnabled())) {
@@ -58,7 +66,7 @@ public class FormatCompiler implements INamedCompiler {
             case "idn-hostname"     -> HostnameValidator.getIDNAHostnameValidator();
             default -> {
                 if(compileContext.getDialect(schemaLocator).isAssertionRequired()) {
-                    throw create(schemaLocator, "The format %s not supported", schemaNode);
+                    throw create(schemaLocator, "The format {0} not supported", schemaNode);
                 }
                 yield null;
             }

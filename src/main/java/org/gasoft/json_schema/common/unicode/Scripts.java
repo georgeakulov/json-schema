@@ -1,7 +1,6 @@
 package org.gasoft.json_schema.common.unicode;
 
-import com.google.common.collect.*;
-import org.jspecify.annotations.NonNull;
+import org.gasoft.json_schema.common.RangeCollections.IntRangeSet;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -34,14 +33,14 @@ public class Scripts {
         return DATA.get(script).contains(code);
     }
 
-    private static final EnumMap<EScript, RangeSet<Integer>> DATA = preloadScript();
+    private static final EnumMap<EScript, IntRangeSet> DATA = preloadScript();
 
-    private static EnumMap<EScript, RangeSet<Integer>> preloadScript() {
+    private static EnumMap<EScript, IntRangeSet> preloadScript() {
         Map<String, EScript> reverse = Arrays.stream(EScript.values()).collect(Collectors.toMap(
                 EScript::getDictName,
                 Function.identity()
         ));
-        EnumMap<EScript, RangeSet<@NonNull Integer>> result = new EnumMap<>(EScript.class);
+        EnumMap<EScript, IntRangeSet> result = new EnumMap<>(EScript.class);
         ParseUtils.forEachLine("ScriptsShort.txt", line -> {
             var parseResult = ParseUtils.parseLine(line);
             if(parseResult != null) {

@@ -24,15 +24,15 @@ class FileLoader implements IResourceLoader {
     public JsonNode loadResource(URI byUri) {
         Path path = Path.of(byUri.getPath());
         File file = path.toFile();
-        checkIt(file.exists(), "File %s does not exist", file);
-        checkIt(file.isFile(), "File %s does not regular file", file);
-        checkIt(file.canRead(), "File %s can`t be read", file);
+        checkIt(file.exists(), "File {0} does not exist", file);
+        checkIt(file.isFile(), "File {0} does not regular file", file);
+        checkIt(file.canRead(), "File {0} can`t be read", file);
 
         try(var is = new BufferedInputStream(new FileInputStream(file))) {
             return JsonUtils.parse(is);
         }
         catch(Exception ex) {
-            throw create(ex, "File %s read error", file);
+            throw create(ex, "File {0} read error", file);
         }
     }
 }

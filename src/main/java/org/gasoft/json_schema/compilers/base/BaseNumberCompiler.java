@@ -1,6 +1,9 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.compilers.CompileContext;
+import org.gasoft.json_schema.compilers.INamedCompiler;
+import org.gasoft.json_schema.compilers.IValidator;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.IValidationResult.IValidationId;
@@ -10,7 +13,7 @@ import java.math.BigDecimal;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 
-abstract class BaseNumberCompiler implements INamedCompiler{
+public abstract class BaseNumberCompiler implements INamedCompiler {
 
     protected abstract IValidationResult analyse(IValidationId id, JsonNode schemaValue, JsonNode instanceValue, int compareResult);
 

@@ -1,14 +1,10 @@
 package org.gasoft.json_schema.compilers;
 
-import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.gasoft.json_schema.dialects.Dialect;
 import org.gasoft.json_schema.loaders.IReferenceResolver;
 import org.gasoft.json_schema.loaders.SchemasRegistry;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
-import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -20,8 +16,8 @@ public class CompileContext implements IReferenceResolver {
     private final CompileConfig compileConfig;
     private SchemasRegistry schemaRegistry;
 
-    private final Map<String, ICompiler> stageCompilers = Maps.newHashMap();
-    private Map<ISchemaLocator, RecursionCheck<IValidator>> compileData = Maps.newTreeMap(Comparator.<ISchemaLocator>naturalOrder());
+    private final Map<String, ICompiler> stageCompilers = new HashMap<>();
+    private Map<ISchemaLocator, RecursionCheck<IValidator>> compileData = new TreeMap<>(Comparator.naturalOrder());
 
 
     public CompileContext(CompileConfig compileConfig) {
@@ -82,6 +78,11 @@ public class CompileContext implements IReferenceResolver {
         return schemaRegistry.resolveDynamicRef(refValue, schemaLocator);
     }
 
+    @Override
+    public @NonNull IResolutionResult resolveRecursiveRef(String refValue, @NonNull ISchemaLocator schemaLocator) {
+        return schemaRegistry.resolveRecursiveRef(refValue, schemaLocator);
+    }
+
     public @NonNull ISchemaLocator resolveId(String idValue, ISchemaLocator locator) {
         return this.schemaRegistry.resolveExistingId(idValue, locator);
     }
@@ -94,7 +95,7 @@ public class CompileContext implements IReferenceResolver {
     private static class RecursionCheck<T> {
 
         private final T payload;
-        private final Set<ISchemaLocator> inboundEdges = Sets.newTreeSet();
+        private final Set<ISchemaLocator> inboundEdges = new TreeSet<>();
 
         public RecursionCheck(T payload) {
             this.payload = payload;

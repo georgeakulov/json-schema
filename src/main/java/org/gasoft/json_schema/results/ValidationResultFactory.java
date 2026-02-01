@@ -1,9 +1,6 @@
 package org.gasoft.json_schema.results;
 
 import com.fasterxml.jackson.core.JsonPointer;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.IValidationResult.IValidationAnnotation;
 import org.gasoft.json_schema.results.IValidationResult.IValidationId;
@@ -22,6 +19,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +65,7 @@ public class ValidationResultFactory {
     public static class ValidationResultContainer implements IValidationResultContainer {
 
         private final IValidationId id;
-        private final List<IValidationResult> nested = Lists.newCopyOnWriteArrayList();
+        private final List<IValidationResult> nested = new CopyOnWriteArrayList<>();
         private boolean valid;
 
         private ValidationResultContainer(IValidationId id, boolean valid) {
@@ -108,10 +106,11 @@ public class ValidationResultFactory {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(valid ? "OK" : "ERR")
-                    .add("id", id)
-                    .add("nested", getNestedResults().map(String::valueOf).collect(Collectors.joining("], [", "[", "]")))
-                    .toString();
+            final StringBuilder sb = new StringBuilder(valid ? "OK" : "ERR");
+            sb.append("id=").append(id);
+            sb.append(", nested=").append(getNestedResults().map(String::valueOf).collect(Collectors.joining("], [", "[", "]")));
+            sb.append('}');
+            return sb.toString();
         }
     }
 
@@ -124,9 +123,10 @@ public class ValidationResultFactory {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper("ANT")
-                    .add("id", id)
-                    .toString();
+            final StringBuilder sb = new StringBuilder("ANT{");
+            sb.append("id=").append(id);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
@@ -143,9 +143,10 @@ public class ValidationResultFactory {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper("OK")
-                    .add("id", id)
-                    .toString();
+            final StringBuilder sb = new StringBuilder("OK{");
+            sb.append("id=").append(id);
+            sb.append('}');
+            return sb.toString();
         }
 
         @Override
@@ -167,11 +168,12 @@ public class ValidationResultFactory {
         }
 
         @Override
-        public String  toString() {
-            return MoreObjects.toStringHelper("id")
-                    .add("loc", schemaLocator)
-                    .add("inst", instancePtr)
-                    .toString();
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("id{");
+            sb.append("loc=").append(schemaLocator);
+            sb.append(", inst=").append(instancePtr);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
@@ -205,7 +207,7 @@ public class ValidationResultFactory {
 
         private void toStringMain(StringBuilder builder, ISchemaLocator schemaLocator, int level) {
             if(level > 0) {
-                builder.append(System.lineSeparator()).append(Strings.repeat("\t", level)).append("-- ");
+                builder.append(System.lineSeparator()).append("\t".repeat(level)).append("-- ");
             }
             builder.append("id=").append(schemaLocator.getId())
                     .append(", org=").append(schemaLocator.getOriginUri())
@@ -247,7 +249,7 @@ public class ValidationResultFactory {
     }
 
     private static void hierarchyFormat(PrintStream builder, int level, IValidationResult result) {
-        builder.print(Strings.repeat("\t", level));
+        builder.print("\t".repeat(level));
         switch (result.getType()) {
             case ANNOTATION, ERROR, OK -> builder.println(result);
             case CONTAINER -> {

@@ -1,14 +1,13 @@
 package org.gasoft.json_schema.common.unicode;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.RangeSet;
-import org.jspecify.annotations.NonNull;
+import org.gasoft.json_schema.common.RangeCollections.IntRangeSet;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class IDNA {
 
-    private static final Map<String, RangeSet<Integer>> IDNA_TABLE = preloadIDNA();
+    private static final Map<String, IntRangeSet> IDNA_TABLE = preloadIDNA();
 
     public static boolean isContexto(int ch) {
         return containsIn("CONTEXTO", ch);
@@ -38,8 +37,8 @@ public class IDNA {
         return false;
     }
 
-    private static Map<String, RangeSet<@NonNull Integer>> preloadIDNA() {
-        Map<String, RangeSet<@NonNull Integer>> result = Maps.newHashMap();
+    private static Map<String, IntRangeSet> preloadIDNA() {
+        Map<String, IntRangeSet> result = new HashMap<>();
         ParseUtils.forEachLine("IDNA2008Short.txt", line -> {
             var parseResult = ParseUtils.parseLine(line);
             if(parseResult != null) {

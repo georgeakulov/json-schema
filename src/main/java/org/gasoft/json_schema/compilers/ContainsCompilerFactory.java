@@ -2,6 +2,8 @@ package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.dialects.Defaults;
+import org.gasoft.json_schema.dialects.Vocabulary;
 import org.gasoft.json_schema.results.EErrorType;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
@@ -16,16 +18,21 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
+import static org.gasoft.json_schema.compilers.CompilerRegistry.VocabularySupport.of;
 
 public class ContainsCompilerFactory implements ICompilerFactory {
-
     @Override
-    public Stream<String> getSupportedKeywords() {
-        return Stream.of("contains", "minContains", "maxContains");
+    public Stream<IVocabularySupport> getSupportedKeywords() {
+        return Stream.of(
+                of(Defaults.DRAFT_2020_12_APPLICATOR, "contains"),
+                of(Defaults.DRAFT_2020_12_VALIDATION, "minContains", "maxContains"),
+                of(Defaults.DRAFT_2019_09_APPLICATOR, "contains"),
+                of(Defaults.DRAFT_2019_09_VALIDATION, "minContains", "maxContains")
+        );
     }
 
     @Override
-    public ICompiler getCompiler(String keyword) {
+    public ICompiler getCompiler(String keyword, Vocabulary vocabulary) {
         return switch (keyword) {
             case "contains" -> new ContainsCompiler();
             case "minContains" -> new MinContainsCompiler();
@@ -127,7 +134,7 @@ public class ContainsCompilerFactory implements ICompilerFactory {
         public IValidator compile(JsonNode schemaNode, String keyword, ISchemaLocator locator) {
             value = Utils.getCheckedInteger(locator, schemaNode, "The %s keyword value must be a non negative integer. Actual: %s", keyword, schemaNode);
             checkIt(value >= 0, locator,
-                    "The %s keyword value must be a non negative integer. Actual: %s", keyword, schemaNode);
+                    "The {0} keyword value must be a non negative integer. Actual: {1}", keyword, schemaNode);
             return null;
         }
 

@@ -1,8 +1,6 @@
 package org.gasoft.json_schema.loaders;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.gasoft.json_schema.IExternalResolutionResult;
 import org.gasoft.json_schema.IExternalResolver;
 import org.gasoft.json_schema.common.JsonUtils;
@@ -11,14 +9,12 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class ExternalResolversHelper implements IExternalResolver {
 
-    private final Map<String, IExternalResolutionResult> externalResolver = Maps.newHashMap();
-    private final List<IExternalResolver> additionalResolutions = Lists.newArrayList();
+    private final Map<String, IExternalResolutionResult> externalResolver = new HashMap<>();
+    private final List<IExternalResolver> additionalResolutions = new ArrayList<>();
 
     @Override
     public @Nullable IExternalResolutionResult resolve(@NonNull String foundId, IValidationResult.@NonNull ISchemaLocator schemaLocator) {

@@ -1,21 +1,20 @@
 package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Predicates;
 import org.gasoft.json_schema.TestUtils;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class JsonSchemaTestDataProvider {
 
-    static final Path testDirectory = Path.of(System.getProperty("user.dir") +"/test_sources/tests/draft2020-12/");
+    static final Path testDirectory = Path.of(System.getProperty("user.dir") +"/test_sources/tests/");
 
     static Stream<TestFile> getTestFiles() {
-        return TestUtils.getPathsFromDir(testDirectory, Predicates.alwaysTrue(), Integer.MAX_VALUE)
+        return TestUtils.getPathsFromDir(testDirectory, ignore -> true, Integer.MAX_VALUE)
                 .stream()
                 .map(path -> new TestFile(
                         path,
@@ -30,7 +29,7 @@ public class JsonSchemaTestDataProvider {
     }
 
     static List<TestUtils.IFile> getFilesHierarchy() {
-        return TestUtils.getPathsHierarchy(testDirectory, Predicates.alwaysTrue());
+        return TestUtils.getPathsHierarchy(testDirectory, ignore -> true);
     }
 
     public static Stream<Schema> toSchema(Path path) {
@@ -54,12 +53,14 @@ public class JsonSchemaTestDataProvider {
     }
 
     record Test(String description, JsonNode value, boolean expected){
+
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper("Test")
-                    .add("description", description)
-                    .add("expected", expected)
-                    .toString();
+            final StringBuilder sb = new StringBuilder("Test{");
+            sb.append("description='").append(description).append('\'');
+            sb.append(", expected=").append(expected);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
@@ -67,9 +68,10 @@ public class JsonSchemaTestDataProvider {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("description", description)
-                    .toString();
+            final StringBuilder sb = new StringBuilder("Schema{");
+            sb.append(", description='").append(description).append('\'');
+            sb.append('}');
+            return sb.toString();
         }
     }
 

@@ -2,7 +2,7 @@ package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.google.common.collect.Lists;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.EErrorType;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.ValidationError;
@@ -10,8 +10,11 @@ import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.jspecify.annotations.NonNull;
 
 import java.math.BigDecimal;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.checkIt;
 import static org.gasoft.json_schema.common.LocatedSchemaCompileException.create;
@@ -23,9 +26,14 @@ public class TypeCompiler implements INamedCompiler {
         return "type";
     }
 
+    @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(Defaults.DRAFT_2020_12_VALIDATION, Defaults.DRAFT_2019_09_VALIDATION);
+    }
+
     @NonNull
     public IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
-        List<Function<JsonNode, Boolean>> validTypes = Lists.newArrayList();
+        List<Function<JsonNode, Boolean>> validTypes = new ArrayList<>();
         if(schemaNode.isArray()) {
             schemaNode.valueStream()
                     .peek(val -> checkKeywordValueType(schemaLocator, val))
@@ -60,7 +68,7 @@ public class TypeCompiler implements INamedCompiler {
     }
 
     private void checkKeywordValueType(ISchemaLocator locator, JsonNode value) {
-        checkIt(value.isTextual(), locator, "The %s keyword values be a string or array of strings", getKeyword());
+        checkIt(value.isTextual(), locator, "The {0} keyword values be a string or array of strings", getKeyword());
     }
 
     private Function<JsonNode, Boolean> resolveType(ISchemaLocator locator, String value, CompileConfig cfg) {
@@ -72,7 +80,7 @@ public class TypeCompiler implements INamedCompiler {
             case "integer" -> validateInteger();
             case "array" -> validateArray(cfg);
             case "object" -> validateByType(JsonNodeType.OBJECT);
-            default -> throw create(locator, "The %s keyword value %s is not supported",  getKeyword(), value);
+            default -> throw create(locator, "The {0} keyword value {1} is not supported",  getKeyword(), value);
         };
     }
 

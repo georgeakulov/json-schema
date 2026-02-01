@@ -1,6 +1,7 @@
 package org.gasoft.json_schema.common.email;
 
-import com.google.common.collect.*;
+import org.gasoft.json_schema.common.RangeCollections;
+import org.gasoft.json_schema.common.RangeCollections.Range;
 import org.gasoft.json_schema.common.unicode.*;
 
 import java.util.Objects;
@@ -15,17 +16,17 @@ public class HostnameValidator {
     private static final String VALID_LDH_CHARS_REGEX = "^([0-9a-z\\-]+)$";
     private static final Predicate<String> VALID_LDH_CHARS_PATTERN = Pattern.compile(VALID_LDH_CHARS_REGEX, Pattern.CASE_INSENSITIVE).asMatchPredicate();
 
-    private static final RangeMap<Integer, BiPredicate<String, Integer>> CONTEXTUAL_RULES = TreeRangeMap.create();
+    private static final RangeCollections.IntRangeMap<BiPredicate<String, Integer>> CONTEXTUAL_RULES = new RangeCollections.IntRangeMap<>();
     static {
-        CONTEXTUAL_RULES.put(Range.singleton(0x200c), HostnameValidator::zeroWidthNonJoiner);
-        CONTEXTUAL_RULES.put(Range.singleton(0x200d), HostnameValidator::zeroWidthJoiner);
-        CONTEXTUAL_RULES.put(Range.singleton(0x00b7), HostnameValidator::middleDot);
-        CONTEXTUAL_RULES.put(Range.singleton(0x0375), HostnameValidator::greekLowerNumeralSign);
-        CONTEXTUAL_RULES.put(Range.singleton(0x05f3), HostnameValidator::hebrewPunctuationGeresh);
-        CONTEXTUAL_RULES.put(Range.singleton(0x05f4), HostnameValidator::hebrewPunctuationGershayim);
-        CONTEXTUAL_RULES.put(Range.singleton(0x30fb), HostnameValidator::katakanaMiddleDot);
-        CONTEXTUAL_RULES.put(Range.closed(0x0660, 0x0669), HostnameValidator::arabicIndicDigits);
-        CONTEXTUAL_RULES.put(Range.closed(0x06f0, 0x06f9), HostnameValidator::extendedArabicIndicDigits);
+        CONTEXTUAL_RULES.put(0x200c, HostnameValidator::zeroWidthNonJoiner);
+        CONTEXTUAL_RULES.put(0x200d, HostnameValidator::zeroWidthJoiner);
+        CONTEXTUAL_RULES.put(0x00b7, HostnameValidator::middleDot);
+        CONTEXTUAL_RULES.put(0x0375, HostnameValidator::greekLowerNumeralSign);
+        CONTEXTUAL_RULES.put(0x05f3, HostnameValidator::hebrewPunctuationGeresh);
+        CONTEXTUAL_RULES.put(0x05f4, HostnameValidator::hebrewPunctuationGershayim);
+        CONTEXTUAL_RULES.put(0x30fb, HostnameValidator::katakanaMiddleDot);
+        CONTEXTUAL_RULES.put(new Range(0x0660, 0x0669), HostnameValidator::arabicIndicDigits);
+        CONTEXTUAL_RULES.put(new Range(0x06f0, 0x06f9), HostnameValidator::extendedArabicIndicDigits);
     }
 
     private static final HostnameValidator INSTANCE = new HostnameValidator();

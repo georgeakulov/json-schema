@@ -1,6 +1,10 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.compilers.CompileContext;
+import org.gasoft.json_schema.compilers.INamedCompiler;
+import org.gasoft.json_schema.compilers.IValidator;
+import org.gasoft.json_schema.compilers.Utils;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 
 

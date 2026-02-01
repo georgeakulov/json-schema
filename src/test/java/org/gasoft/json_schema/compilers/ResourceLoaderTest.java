@@ -1,7 +1,6 @@
 package org.gasoft.json_schema.compilers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Maps;
 import org.gasoft.json_schema.SchemaBuilder;
 import org.gasoft.json_schema.common.SchemaCompileException;
 import org.gasoft.json_schema.loaders.IResourceLoader;
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -52,7 +52,7 @@ public class ResourceLoaderTest {
 
     private static class CustomLoader implements IResourceLoader {
 
-        private final Map<URI, JsonNode> content = Maps.newHashMap();
+        private final Map<URI, JsonNode> content = new HashMap<>();
 
         @Override
         public Stream<String> getSupportedSchemes() {

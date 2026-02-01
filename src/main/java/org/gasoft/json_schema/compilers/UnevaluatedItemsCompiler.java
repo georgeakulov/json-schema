@@ -3,6 +3,7 @@ package org.gasoft.json_schema.compilers;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.gasoft.json_schema.dialects.Defaults;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.IValidationId;
 import org.gasoft.json_schema.results.ValidationResultFactory;
@@ -10,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -18,7 +20,7 @@ import java.util.stream.Stream;
 public class UnevaluatedItemsCompiler implements INamedCompiler, IValidatorsTransformer {
 
     private final static Set<String> EXPECTED_KEYWORDS = Set.of(
-            "prefixItems", "items", "contains", "$ref", "$dynamicRef"
+            "prefixItems", "items", "contains", "$ref", "$dynamicRef", "additionalItems", "$recursiveRef"
     );
 
     private final static Set<String> AWAITED_KEYWORDS = Stream.of(
@@ -34,6 +36,14 @@ public class UnevaluatedItemsCompiler implements INamedCompiler, IValidatorsTran
     @Override
     public String getKeyword() {
         return "unevaluatedItems";
+    }
+
+    @Override
+    public Stream<URI> getVocabularies() {
+        return Stream.of(
+                Defaults.DRAFT_2020_12_UNEVALUATED,
+                Defaults.DRAFT_2019_09_CORE
+        );
     }
 
     @Override

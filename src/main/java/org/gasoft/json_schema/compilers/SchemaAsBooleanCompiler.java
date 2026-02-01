@@ -15,7 +15,7 @@ public class SchemaAsBooleanCompiler implements ICompiler {
 
     @Override
     public IValidator compile(JsonNode schemaNode, CompileContext compileContext, ISchemaLocator schemaLocator) {
-        checkIt(schemaNode.isBoolean(), schemaLocator, "Illegal value node. Expected boolean, actual %s", schemaNode.getNodeType());
+        checkIt(schemaNode.isBoolean(), schemaLocator, "Illegal value node. Expected boolean, actual {0}", schemaNode.getNodeType());
         return (instance, instancePtr, context) -> {
             var id = ValidationResultFactory.createId(schemaLocator, instancePtr);
             if(schemaNode.booleanValue()) {

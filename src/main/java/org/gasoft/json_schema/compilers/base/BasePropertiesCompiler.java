@@ -1,7 +1,11 @@
-package org.gasoft.json_schema.compilers;
+package org.gasoft.json_schema.compilers.base;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.gasoft.json_schema.compilers.CompileConfig;
+import org.gasoft.json_schema.compilers.INamedCompiler;
+import org.gasoft.json_schema.compilers.IValidationContext;
+import org.gasoft.json_schema.compilers.IValidator;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.IValidationResult.ISchemaLocator;
 import org.gasoft.json_schema.results.ValidationResultFactory;
@@ -15,7 +19,7 @@ import java.util.stream.Stream;
 
 public abstract class BasePropertiesCompiler implements INamedCompiler {
 
-    static class PropertiesValidator implements IValidator {
+    public static class PropertiesValidator implements IValidator {
 
         private final ISchemaLocator schemaLocation;
         private final Function<String, Stream<IValidator>> validatorResolver;
@@ -32,12 +36,6 @@ public abstract class BasePropertiesCompiler implements INamedCompiler {
             if(instance.isObject()) {
 
                 return Flux.fromStream(instance.propertyStream())
-//                        .window(5)
-//                        .parallel()
-//                        .runOn(config.getScheduler())
-//                        .parallel()
-//                        .runOn(Schedulers.boundedElastic())
-//                        .publishOn(config.getScheduler())
                         .flatMap(entry ->
                                 Flux.fromStream(
                                     validatorResolver.apply(entry.getKey())
@@ -46,13 +44,10 @@ public abstract class BasePropertiesCompiler implements INamedCompiler {
                                 )
                         )
                         .flatMap(named -> named.validate(instance.get(named.name()), instancePtr, context))
-//                        .sequential()
-//                        .subscribeOn(config.getScheduler())
                         .reduce(
                                 ValidationResultFactory.createContainer(schemaLocation, instancePtr),
                                 ValidationResultFactory.ValidationResultContainer::append
                         )
-//                        .doOnNext(result -> context.addValidationResult(getKeyword(), result))
                         .map(value -> value);
             }
 

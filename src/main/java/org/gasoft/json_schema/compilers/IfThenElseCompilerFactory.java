@@ -3,6 +3,8 @@ package org.gasoft.json_schema.compilers;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.gasoft.json_schema.compilers.ICompiler.IValidatorAction;
+import org.gasoft.json_schema.dialects.Defaults;
+import org.gasoft.json_schema.dialects.Vocabulary;
 import org.gasoft.json_schema.results.IValidationResult;
 import org.gasoft.json_schema.results.ValidationResultFactory;
 import org.jspecify.annotations.NonNull;
@@ -18,12 +20,15 @@ import java.util.stream.Stream;
 public class IfThenElseCompilerFactory implements ICompilerFactory, IValidatorsTransformer {
 
     @Override
-    public Stream<String> getSupportedKeywords() {
-        return Stream.of("if", "then", "else");
+    public Stream<IVocabularySupport> getSupportedKeywords() {
+        return Stream.of(
+                CompilerRegistry.VocabularySupport.of(Defaults.DRAFT_2020_12_APPLICATOR, "if", "then", "else"),
+                CompilerRegistry.VocabularySupport.of(Defaults.DRAFT_2019_09_APPLICATOR, "if", "then", "else")
+        );
     }
 
     @Override
-    public ICompiler getCompiler(String keyword) {
+    public ICompiler getCompiler(String keyword, Vocabulary vocabulary) {
         return switch (keyword) {
             case "if", "then", "else" -> new CaseCompiler();
             default -> null;
