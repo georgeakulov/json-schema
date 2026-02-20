@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'org.gasoft'
+group = 'io.github.georgeakulov'
 version = '1.2.1'
 
 repositories {
