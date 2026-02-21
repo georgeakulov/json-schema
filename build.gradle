@@ -1,7 +1,8 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'signing'
+//    id 'signing'
+    id("org.jreleaser") version "1.22.0"
 }
 
 group = 'io.github.georgeakulov'
@@ -49,18 +50,48 @@ publishing {
         }
     }
     repositories {
-        maven {
-            name = "OSSRH"
-            var releasesRepoUrl = uri("https://s01.oss.sonatype.org")
-            var snapshotsRepoUrl = uri("https://s01.oss.sonatype.org")
-            url = version.toString().endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
-                username = System.getenv("ossrhUsername")
-                password = System.getenv("ossrhPassword")
+        repositories {
+            maven {
+                name = "staging"
+                url = uri(layout.buildDirectory.dir("staging-deploy"))
             }
         }
     }
 }
+
+jreleaser {
+    signing {
+        pgp {
+            active = 'ALWAYS'
+            armored = true
+            mode = 'FILE'
+        }
+    }
+
+    release {
+        github {
+            skipRelease = true
+            skipTag = true
+            repoOwner = "georgeakulov"
+        }
+    }
+
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'RELEASE'
+                    url = "https://central.sonatype.com/api/v1/publisher"
+                    stagingRepository("build/staging-deploy")
+                }
+            }
+        }
+    }
+}
+//
+//signing {
+//    sign(publishing.publications["mavenJava"])
+//}
 
 dependencies {
 
