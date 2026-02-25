@@ -31,6 +31,7 @@ public class CompileConfig {
     private final CompositeContentValidationRegistry contentValidationRegistry =
             new CompositeContentValidationRegistry(DefaultContentValidationRegistryFactory.getDefault());
     private ContentValidationLevel contentValidationLevel= ContentValidationLevel.DEFAULT;
+    private boolean allowEmbedResourceLoaders;
 
     public boolean isFormatEnabled() {
         return formatEnabled;
@@ -120,5 +121,14 @@ public class CompileConfig {
     public CompileConfig addFirstContentValidationRegistry(IContentValidationRegistry contentValidationRegistry) {
         this.contentValidationRegistry.addFirst(contentValidationRegistry);
         return this;
+    }
+
+    public CompileConfig allowEmbedResourceLoaders(boolean allowEmbedResourceLoaders) {
+        this.allowEmbedResourceLoaders = allowEmbedResourceLoaders;
+        return this;
+    }
+
+    public boolean isAllowEmbedResourceLoaders() {
+        return allowEmbedResourceLoaders;
     }
 }

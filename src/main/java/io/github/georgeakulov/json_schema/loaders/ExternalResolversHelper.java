@@ -73,21 +73,21 @@ public class ExternalResolversHelper implements IExternalResolver {
         return uri;
     }
 
-    private record ToSchemaResolver(JsonNode schema) implements IExternalResolutionResult {
+    record ToSchemaResolver(JsonNode schema) implements IExternalResolutionResult {
         @Override
         public @Nullable JsonNode getSchema() {
             return schema;
         }
     }
 
-    private record ToUriResolver(URI uri) implements IExternalResolutionResult {
+    record ToUriResolver(URI uri) implements IExternalResolutionResult {
         @Override
         public @Nullable URI getAbsoluteUri() {
             return uri;
         }
     }
 
-    private record ToUriAndSchemaResolver(URI uri, JsonNode schema) implements IExternalResolutionResult {
+    record ToUriAndSchemaResolver(URI uri, JsonNode schema) implements IExternalResolutionResult {
         @Override
         public @Nullable JsonNode getSchema() {
             return schema;

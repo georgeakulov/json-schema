@@ -1,12 +1,11 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-//    id 'signing'
     id("org.jreleaser") version "1.22.0"
 }
 
 group = 'io.github.georgeakulov'
-version = '1.2.2'
+version = '1.2.3'
 
 repositories {
     mavenLocal()
@@ -88,10 +87,6 @@ jreleaser {
         }
     }
 }
-//
-//signing {
-//    sign(publishing.publications["mavenJava"])
-//}
 
 dependencies {
 

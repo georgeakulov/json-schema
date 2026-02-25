@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 import static io.github.georgeakulov.json_schema.common.SchemaCompileException.create;
 
-class HttpLoader implements IResourceLoader {
+public class HttpLoader implements IResourceLoader {
 
     @Override
     public Stream<String> getSupportedSchemes() {

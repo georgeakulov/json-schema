@@ -14,6 +14,7 @@ import io.github.georgeakulov.json_schema.compilers.Compiler;
 import io.github.georgeakulov.json_schema.dialects.Defaults;
 import io.github.georgeakulov.json_schema.loaders.ExternalResolversHelper;
 import io.github.georgeakulov.json_schema.loaders.IResourceLoader;
+import io.github.georgeakulov.json_schema.loaders.OriginalSpecResolver;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -32,13 +33,15 @@ public class SchemaBuilder {
     private URI defaultDialect;
     private boolean formatEnabled = false;
     private boolean allowTreatAsArray = false;
-    private ExternalResolversHelper externalSchemaResolver;
+    private final ExternalResolversHelper externalSchemaResolver = new ExternalResolversHelper();
     private Scheduler scheduler;
     private final List<IResourceLoader> resourceLoaders = new ArrayList<>(1);
     private IRegexPredicateFactory regexPredicateFactory;
     private final Map<String, Predicate<String>> formatValidators = new HashMap<>();
     private ContentValidationLevel contentValidationLevel = ContentValidationLevel.DEFAULT;
     private final SimpleContentValidationRegistry contentValidationRegistry = new SimpleContentValidationRegistry();
+    private boolean allowEmbedResourceLoaders = true;
+    private boolean allowOriginalSpecPreload = true;
 
 
     private SchemaBuilder() {
@@ -103,11 +106,41 @@ public class SchemaBuilder {
         return this;
     }
 
+    /**
+     * Add loaders for URI schemes. Loaders are selected sequentially in the order they are added.
+     * This allows you to override the default loaders.
+     * @param schema the name of shema
+     * @param loader loader function
+     * @return this
+     * @throws NullPointerException if argument is null
+     */
+
     public SchemaBuilder addResourceLoader(String schema, Function<URI, JsonNode> loader) {
         return addResourceLoader(new ResourceLoader(
                 Objects.requireNonNull(schema, "The schema is null"),
                 Objects.requireNonNull(loader, "The loader is null")
         ));
+    }
+
+    /**
+     * Allow using embed resource loaders. Default: true
+     * @param allow permission
+     * @return this
+     */
+    public SchemaBuilder allowEmbedResourceLoaders(boolean allow) {
+        this.allowEmbedResourceLoaders = allow;
+        return this;
+    }
+
+    /**
+     * Sometime json schema contains $ref to original specifications. This library already contains its specifications.
+     * This flag allow use this specifications without loading from web. Default: true
+     * @param allow permission
+     * @return this
+     */
+    public SchemaBuilder allowEmbedOriginalSpec(boolean allow) {
+        this.allowOriginalSpecPreload = allow;
+        return this;
     }
 
     /**
@@ -118,7 +151,7 @@ public class SchemaBuilder {
      * @throws NullPointerException if any of arguments is null
      */
     public SchemaBuilder setSchemaResolver(IExternalResolver externalResolver) {
-        withResolverHelper().addResolver(externalResolver);
+        externalSchemaResolver.addResolver(externalResolver);
         return this;
     }
 
@@ -193,7 +226,7 @@ public class SchemaBuilder {
      * @throws NullPointerException if any of arguments is null
      */
     public SchemaBuilder addMappingIdToSchema(String id, JsonNode schema) {
-        withResolverHelper().mapIdToSchema(id, schema);
+        externalSchemaResolver.mapIdToSchema(id, schema);
         return this;
     }
 
@@ -206,7 +239,7 @@ public class SchemaBuilder {
      * @throws IllegalArgumentException if {@code schemaStr} is not valid json
      */
     public SchemaBuilder addMappingIdToSchema(String id, String schemaStr) {
-        withResolverHelper().mapIdToSchema(id, schemaStr);
+        externalSchemaResolver.mapIdToSchema(id, schemaStr);
         return this;
     }
 
@@ -218,7 +251,7 @@ public class SchemaBuilder {
      * @throws NullPointerException if any of arguments is null
      */
     public SchemaBuilder addMappingIdToURI(String id, URI schemaLocation) {
-        withResolverHelper().mapIdToUri(id, schemaLocation);
+        externalSchemaResolver.mapIdToUri(id, schemaLocation);
         return this;
     }
 
@@ -232,7 +265,7 @@ public class SchemaBuilder {
      * @throws NullPointerException if any of arguments is null
      */
     public SchemaBuilder addMappingIdToUriAndSchema(String id, URI schemaLocation, JsonNode schema) {
-        withResolverHelper().mapIdToUriAndSchema(id, schemaLocation, schema);
+        externalSchemaResolver.mapIdToUriAndSchema(id, schemaLocation, schema);
         return this;
     }
 
@@ -247,7 +280,7 @@ public class SchemaBuilder {
      * @throws IllegalArgumentException if {@code schemaStr} is not valid json
      */
     public SchemaBuilder addMappingIdToUriAndSchema(String id, URI schemaLocation, String schemaStr) {
-        withResolverHelper().mapIdToUriAndSchema(id, schemaLocation, schemaStr);
+        externalSchemaResolver.mapIdToUriAndSchema(id, schemaLocation, schemaStr);
         return this;
     }
 
@@ -313,13 +346,6 @@ public class SchemaBuilder {
         return setScheduler(Schedulers.fromExecutorService(executorService));
     }
 
-    private ExternalResolversHelper withResolverHelper() {
-        if(externalSchemaResolver == null) {
-            externalSchemaResolver = new ExternalResolversHelper();
-        }
-        return externalSchemaResolver;
-    }
-
     /**
      * Compile the json schema with the previously set parameters
      * @param schema json schema
@@ -329,10 +355,14 @@ public class SchemaBuilder {
      */
     public Schema compile(JsonNode schema) {
         Objects.requireNonNull(schema, "The schema is null");
+        if(allowOriginalSpecPreload) {
+            externalSchemaResolver.addResolver(new OriginalSpecResolver());
+        }
         var validateFunc = new Compiler()
                 .compileSchema(schema, defaultDialect, new CompileConfig()
                         .setExternalSchemaResolver(externalSchemaResolver)
                         .addResourceLoaders(resourceLoaders)
+                        .allowEmbedResourceLoaders(allowEmbedResourceLoaders)
                         .setAllowTreatAsArray(allowTreatAsArray)
                         .setRegexpFactory(regexPredicateFactory)
                         .setScheduler(scheduler)

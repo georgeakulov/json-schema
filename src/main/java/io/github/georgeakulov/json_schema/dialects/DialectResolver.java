@@ -99,7 +99,6 @@ public class DialectResolver {
         return new AbstractMap.SimpleEntry<>(unknownSchema, resolveExistingDialect(unknownSchema));
     }
 
-
     private @Nullable DialectInfo resolveExistingDialect(JsonNode schema) {
         var node = schema.path("$schema");
         if(node.isMissingNode()) {

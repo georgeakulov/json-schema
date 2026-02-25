@@ -45,7 +45,6 @@ public class JsonSchemaOrgTests {
                             )
                     ),
             new TestConfig("draft7")
-                    .setDirectoryFilter(any -> false)
                     .setSchemaCustomizer((schema, builder) ->
                         builder.setDraft07DefaultDialect()
                                 .setFormatAssertionsEnabled(

@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -71,13 +72,27 @@ public class TestUtils {
         }
     }
 
+    public static JsonNode getResource(String path) {
+
+        try(InputStream is = Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResourceAsStream(path), () -> "No resource " + path)) {
+            return loadJson(is);
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Error load json: " + path, e);
+        }
+    }
+
     public static JsonNode loadJson(File file) {
         try (InputStream inStream = Files.newInputStream(file.toPath())) {
-            return mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true).reader().readTree(inStream);
+            return loadJson(inStream);
         }
         catch(IOException e) {
             throw new RuntimeException("Error load json: " + file, e);
         }
+    }
+
+    public static JsonNode loadJson(InputStream is) throws IOException{
+        return mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true).reader().readTree(is);
     }
 
     public static JsonNode fromString(String str) {

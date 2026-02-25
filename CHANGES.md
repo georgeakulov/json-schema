@@ -26,3 +26,14 @@
 
 
 * **1.2.2** - Compress resources and add publishing config
+
+* **1.2.3** - Minimize eternal schemas loading. 
+
+    <details>
+        <summary>more</summary>
+  
+        - the content of non standard $schema uri, can be predefined by IExternalResolver
+        - remove unnecessary console output 
+        - the content of specification schema and its vocabularies included in library and may be used 
+        - the internal loaders may be disabled
+    </details>

@@ -227,7 +227,7 @@ public class SchemaPreprocessor {
                             compiler.preprocess(this, entry.getKey(), entry.getValue(), pointer.appendProperty(entry.getKey()));
                         }
                         else {
-                            System.out.println("No compiler for key: " + entry.getKey());
+                            System.err.println("No compiler for key: " + entry.getKey());
                         }
                     });
         }

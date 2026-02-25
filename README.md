@@ -10,6 +10,9 @@ speeds up the processing of JSON that contains or consists of large arrays.
   * [How it works](#how-it-works)
   * [Features](#features)
   * [Usage](#usage)
+    * [Repository placement and dependencies](#repository-placement-and-dependencies)
+      * [Link this library](#link-this-library-)
+      * [Library dependencies](#library-dependencies)
     * [Simple schema validation](#simple-schema-validation)
     * [Define own resource loaders](#define-own-resource-loaders)
     * [Resolve schema references to concrete URI or concrete schema](#resolve-schema-references-to-concrete-uri-or-concrete-schema)
@@ -41,6 +44,35 @@ During the schema compilation process, all \$ref and \$dynamicRef references are
    You can specify an external data loader and thus load data using schemes such as urn, ftp, ssh, etc.
 
 ## Usage
+
+### Repository placement and dependencies
+
+#### Link this library 
+```xml
+        <dependency>
+            <groupId>io.github.georgeakulov</groupId>
+            <artifactId>json-schema</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+```
+#### Library dependencies
+```xml
+    <dependencies>
+        <!-- Parallelization -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+        <!-- Json support -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.20.1</version>
+        </dependency>
+    </dependencies>
+```
+
 
 ### Simple schema validation
 
@@ -254,7 +286,7 @@ String schema = """
         result = compiledSchema.apply(validEncodingAndSchema);
         assertTrue(result.isOk());
 ```
-Builtin support for contentEncoding types: base64, quoted-printable, 7bit.
+Builtin support for contentEncoding types: `base64`, `quoted-printable`, `7bit`.
 Builtin support for json evaluable contentMediaType
 
 Also you can add or redefined validators for contentEncoding and contentMediaType schema values. 

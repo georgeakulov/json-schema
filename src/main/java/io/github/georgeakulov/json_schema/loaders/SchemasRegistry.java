@@ -41,6 +41,7 @@ public class SchemasRegistry implements IReferenceResolver {
     public SchemasRegistry(DialectResolver dialectResolver, CompileConfig compileConfig) {
         this.compileConfig = compileConfig;
         this.dialectResolver = dialectResolver;
+        resourceLoaders.setUseEmbedded(compileConfig.isAllowEmbedResourceLoaders());
         compileConfig.getResourceLoaders().reversed().forEach(resourceLoaders::addLoader);
     }
 
@@ -50,13 +51,32 @@ public class SchemasRegistry implements IReferenceResolver {
         return ValidationResultFactory.createSchemaLocator(info.getUuid(), info.getOrigin(), info.getId(), JsonPointer.empty());
     }
 
+    private JsonNode tryResolveExternalSchema(URI id, ISchemaLocator schemaLocator) {
+        if(this.compileConfig.getExternalSchemaResolver() != null) {
+            var externalResult = this.compileConfig.getExternalSchemaResolver().resolve(id.toString(), schemaLocator);
+            if (externalResult != null) {
+                // Какой то результат есть
+                if(externalResult.getSchema() != null) {
+                    return externalResult.getSchema();
+                }
+
+                var uri = externalResult.getAbsoluteUri();
+                if(uri != null && !uri.equals(id)) {
+                    return tryResolveExternalSchema(uri, schemaLocator);
+                }
+            }
+        }
+
+        return this.resourceLoaders.loadResource(id);
+    }
+
     /**
      * @return loaded schema id if found
      */
     @NonNull
     private SchemaInfo registerSchema(JsonNode node, @Nullable URI byUri, ISchemaLocator parentLocator, @Nullable Dialect defaultDialect) {
 
-        Dialect dialect = dialectResolver.resolveDialect(node, resourceLoaders::loadResource);
+        Dialect dialect = dialectResolver.resolveDialect(node, uri -> tryResolveExternalSchema(uri, parentLocator));
         if(dialect == null) {
             if(defaultDialect == null) {
                 throw SchemaCompileException.create("Can`t resolve dialect. You can setup default dialect");
@@ -332,7 +352,7 @@ public class SchemasRegistry implements IReferenceResolver {
         // This is absolute file load them
         JsonNode schema;
         try {
-            schema = resourceLoaders.loadResource(resolved);
+            schema = tryResolveExternalSchema(resolved, schemaLocator);
 
         }
         catch(Throwable e) {
